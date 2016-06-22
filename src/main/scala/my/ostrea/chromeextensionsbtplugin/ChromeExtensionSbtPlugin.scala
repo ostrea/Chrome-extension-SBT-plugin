@@ -6,16 +6,16 @@ import Keys._
 object ChromeExtensionSbtPlugin extends AutoPlugin {
 
   object autoImport {
-    val testPluginCommand = taskKey[Unit]("Test plugin command")
+    val createUnpackedExtension = taskKey[Unit]("Create unpacked extension.")
   }
 
   import autoImport._
 
   override def projectSettings: Seq[Setting[_]] = Seq(
-    testPluginCommandSetting
+    createUnpackedExtensionSetting
   )
 
-  def testPluginCommandSetting: Setting[_] = testPluginCommand := {
+  def createUnpackedExtensionSetting: Setting[_] = createUnpackedExtension := {
     val log = streams.value.log
     log.info("I am sbt plugin, yahuu")
   }
