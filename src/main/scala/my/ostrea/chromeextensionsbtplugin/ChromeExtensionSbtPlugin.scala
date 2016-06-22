@@ -1,12 +1,12 @@
 package my.ostrea.chromeextensionsbtplugin
 
-import sbt.{AutoPlugin, Keys, Setting, inputKey}
+import sbt.{AutoPlugin, Keys, Setting, taskKey}
 import Keys._
 
 object ChromeExtensionSbtPlugin extends AutoPlugin {
 
   object autoImport {
-    val testPluginCommand = inputKey[Unit]("Test plugin command")
+    val testPluginCommand = taskKey[Unit]("Test plugin command")
   }
 
   import autoImport._
