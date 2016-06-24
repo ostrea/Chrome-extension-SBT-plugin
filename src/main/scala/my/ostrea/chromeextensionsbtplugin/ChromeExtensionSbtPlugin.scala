@@ -32,9 +32,12 @@ object ChromeExtensionSbtPlugin extends AutoPlugin {
 
     val extensionDirectory = createDirectoryForExtension(compilerOutputDirectory.toString)
 
-    copyResources(log, extensionDirectory, targetDirectory = compilerOutputDirectory.getParent.toString)
+    val projectDirectory = compilerOutputDirectory.getParent
+    copyResources(log, extensionDirectory, projectDirectory.toString)
 
     copyJsFiles(log, extensionDirectory.toString, directoryWithGeneratedJs = pathToTheFile.getParent)
+
+    copyManifestAndIcon(log, projectDirectory, extensionDirectory.toString)
   }
 
   private def createDirectoryForExtension(targetDirectory: String): Path = {
@@ -55,7 +58,7 @@ object ChromeExtensionSbtPlugin extends AutoPlugin {
     try {
       stream = Files.newDirectoryStream(directoryWithGeneratedJs, "*.js")
       jsFiles = stream.map(file => (file.toFile,
-        Paths.get(extensionDirectory, file.getFileName.toString).toFile))
+                                    Paths.get(extensionDirectory, file.getFileName.toString).toFile))
     } catch {
       case ioException: IOException =>
         log.error(s"Can't get stream for the $directoryWithGeneratedJs.")
@@ -66,5 +69,28 @@ object ChromeExtensionSbtPlugin extends AutoPlugin {
     }
     IO.copy(jsFiles)
     log.info("JS files copied.")
+  }
+
+  private def copyManifestAndIcon(log: Logger, projectDirectory: Path, extensionDirectory: String): Unit = {
+    var stream: DirectoryStream[Path] = null
+    var files: Traversable[(File, File)] = null
+    try {
+      stream = Files.newDirectoryStream(projectDirectory, "*.{json,png}")
+      val onlyManifestAndIcon = stream.filter(file => {
+        val fileName = file.getFileName.toString
+        fileName == "manifest.json" || fileName == "icon.png"
+      })
+      files = onlyManifestAndIcon.map(file => (file.toFile,
+                                               Paths.get(extensionDirectory, file.getFileName.toString).toFile))
+    } catch {
+      case ioException: IOException =>
+        log.error(s"Can't get stream for the $projectDirectory.")
+    } finally {
+      if (stream != null) {
+        stream.close()
+      }
+    }
+    IO.copy(files)
+    log.info("Manifest and icon copied.")
   }
 }
