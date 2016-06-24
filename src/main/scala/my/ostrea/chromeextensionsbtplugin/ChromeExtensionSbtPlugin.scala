@@ -1,8 +1,10 @@
 package my.ostrea.chromeextensionsbtplugin
 
-import sbt.{AutoPlugin, Keys, Setting, taskKey, Compile}
-import Keys._
+import java.nio.file.Paths
+
 import org.scalajs.sbtplugin.ScalaJSPlugin
+import sbt.Keys._
+import sbt.{AutoPlugin, Compile, IO, Setting, taskKey}
 
 object ChromeExtensionSbtPlugin extends AutoPlugin {
 
@@ -18,7 +20,17 @@ object ChromeExtensionSbtPlugin extends AutoPlugin {
 
   def createUnpackedExtensionSetting: Setting[_] = createUnpackedExtension := {
     val log = streams.value.log
+
     log.info("JS generated.")
-    val result = (ScalaJSPlugin.autoImport.fullOptJS in Compile).value
+    (ScalaJSPlugin.autoImport.fullOptJS in Compile).value
+
+    createDirectoryForExtension
+  }
+
+  private def createDirectoryForExtension: Unit = {
+    val pathToTheFile = (artifactPath in ScalaJSPlugin.autoImport.fullOptJS in Compile).value.toPath
+    val targetDirectory = pathToTheFile.getParent.getParent
+    val extensionDirectory = Paths.get(targetDirectory.toString, "unpacked_extension")
+    IO.createDirectory(extensionDirectory.toFile)
   }
 }
