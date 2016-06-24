@@ -5,7 +5,7 @@ import java.io.{File, IOException}
 
 import org.scalajs.sbtplugin.ScalaJSPlugin
 import sbt.Keys._
-import sbt.{AutoPlugin, Compile, IO, Setting, taskKey}
+import sbt.{AutoPlugin, Compile, IO, Logger, Setting, taskKey}
 
 import scala.collection.JavaConversions._
 
@@ -27,24 +27,35 @@ object ChromeExtensionSbtPlugin extends AutoPlugin {
     (ScalaJSPlugin.autoImport.fullOptJS in Compile).value
     log.info("JS generated.")
 
-//    createDirectoryForExtension()
-
     val pathToTheFile = (artifactPath in ScalaJSPlugin.autoImport.fullOptJS in Compile).value.toPath
-    val targetDirectory = pathToTheFile.getParent.getParent
-    val extensionDirectory = Paths.get(targetDirectory.toString, "unpacked_extension")
-    IO.createDirectory(extensionDirectory.toFile)
+    val compilerOutputDirectory = pathToTheFile.getParent.getParent
 
-    val resourcesDirectory = Paths.get(targetDirectory.getParent.toString, "src", "main", "resources")
+    val extensionDirectory = createDirectoryForExtension(compilerOutputDirectory.toString)
+
+    copyResources(log, extensionDirectory, targetDirectory = compilerOutputDirectory.getParent.toString)
+
+    copyJsFiles(log, extensionDirectory.toString, directoryWithGeneratedJs = pathToTheFile.getParent)
+  }
+
+  private def createDirectoryForExtension(targetDirectory: String): Path = {
+    val extensionDirectory = Paths.get(targetDirectory, "unpacked_extension")
+    IO.createDirectory(extensionDirectory.toFile)
+    extensionDirectory
+  }
+
+  private def copyResources(log: Logger, extensionDirectory: Path, targetDirectory: String): Unit = {
+    val resourcesDirectory = Paths.get(targetDirectory, "src", "main", "resources")
     IO.copyDirectory(resourcesDirectory.toFile, extensionDirectory.toFile)
     log.info("Resources copied.")
+  }
 
-    val directoryWithGeneratedJs = pathToTheFile.getParent
+  private def copyJsFiles(log: Logger, extensionDirectory: String, directoryWithGeneratedJs: Path): Unit = {
     var stream: DirectoryStream[Path] = null
     var jsFiles: Traversable[(File, File)] = null
     try {
       stream = Files.newDirectoryStream(directoryWithGeneratedJs, "*.js")
       jsFiles = stream.map(file => (file.toFile,
-                                    Paths.get(extensionDirectory.toString, file.getFileName.toString).toFile))
+        Paths.get(extensionDirectory, file.getFileName.toString).toFile))
     } catch {
       case ioException: IOException =>
         log.error(s"Can't get stream for the $directoryWithGeneratedJs.")
