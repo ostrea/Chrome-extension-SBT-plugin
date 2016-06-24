@@ -1,7 +1,8 @@
 package my.ostrea.chromeextensionsbtplugin
 
-import sbt.{AutoPlugin, Keys, Setting, taskKey}
+import sbt.{AutoPlugin, Keys, Setting, taskKey, Compile}
 import Keys._
+import org.scalajs.sbtplugin.ScalaJSPlugin
 
 object ChromeExtensionSbtPlugin extends AutoPlugin {
 
@@ -17,6 +18,7 @@ object ChromeExtensionSbtPlugin extends AutoPlugin {
 
   def createUnpackedExtensionSetting: Setting[_] = createUnpackedExtension := {
     val log = streams.value.log
-    log.info("I am sbt plugin, yahuu")
+    log.info("JS generated.")
+    val result = (ScalaJSPlugin.autoImport.fullOptJS in Compile).value
   }
 }
